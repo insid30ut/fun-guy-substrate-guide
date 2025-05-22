@@ -9,40 +9,65 @@ import { Calculator } from "lucide-react";
 
 const SubstrateCalculator = () => {
   const [substrateType, setSubstrateType] = useState('cvg');
-  const [blockSize, setBlockSize] = useState(2.3); // in kg (approximately 5 lbs converted)
-  const [numBlocks, setNumBlocks] = useState(1);
+  const [primaryWeight, setPrimaryWeight] = useState(1.0); // in kg (primary ingredient weight)
+  const [numBatches, setNumBatches] = useState(1);
   const [result, setResult] = useState<Record<string, number>>({});
   const [isCalculated, setIsCalculated] = useState(false);
   
-  // Formula mappings for different substrate types (amounts per kg)
+  // Formula mappings for different substrate types (ratios based on primary ingredient)
   const substrateFormulas = {
-    cvg: { // Coir, Vermiculite, Gypsum
-      coir: 0.55, // kg per kg of substrate
-      vermiculite: 0.35, // kg per kg of substrate
-      gypsum: 0.05, // kg per kg of substrate
-      water: 1500, // grams per kg of substrate (converted from 1.5 quarts = ~1500g per kg)
+    cvg: { // Based on coir weight
+      coir: 1.0, // reference value (1 kg coir = 1 kg coir)
+      vermiculite: 0.64, // ratio to coir weight
+      gypsum: 0.09, // ratio to coir weight
+      water: 2727, // grams of water per kg of coir
     },
-    masters: { // Masters Mix - Soy hulls and Hardwood
-      hardwood: 0.5, // kg per kg of substrate
-      soyhulls: 0.5, // kg per kg of substrate
-      water: 1800, // grams per kg of substrate
+    masters: { // Based on hardwood weight
+      hardwood: 1.0, // reference value (1 kg hardwood = 1 kg hardwood)
+      soyhulls: 1.0, // ratio to hardwood weight (1:1 ratio)
+      water: 3600, // grams of water per kg of hardwood
     },
-    straw: { // Straw
-      straw: 0.8, // kg per kg of substrate
-      gypsum: 0.05, // kg per kg of substrate
-      water: 2000, // grams per kg of substrate
+    straw: { // Based on straw weight
+      straw: 1.0, // reference value (1 kg straw = 1 kg straw)
+      gypsum: 0.0625, // ratio to straw weight
+      water: 2500, // grams of water per kg of straw
     },
   };
 
+  // Get the primary ingredient based on substrate type
+  const getPrimaryIngredient = (type: string): string => {
+    switch(type) {
+      case 'cvg':
+        return 'coir';
+      case 'masters':
+        return 'hardwood';
+      case 'straw':
+        return 'straw';
+      default:
+        return 'coir';
+    }
+  };
+
   const handleCalculate = () => {
-    const totalWeight = blockSize * numBlocks;
+    const primaryIngredient = getPrimaryIngredient(substrateType);
     const formula = substrateFormulas[substrateType as keyof typeof substrateFormulas];
     
     const calculatedResult: Record<string, number> = {};
     
     Object.entries(formula).forEach(([ingredient, ratio]) => {
-      calculatedResult[ingredient] = +(totalWeight * ratio).toFixed(2);
+      calculatedResult[ingredient] = +(primaryWeight * ratio * numBatches).toFixed(2);
     });
+    
+    // Calculate estimated total substrate weight
+    const totalWeight = Object.values(calculatedResult).reduce((acc, val) => {
+      // Don't include water in the dry weight calculation
+      if (val !== calculatedResult.water) {
+        return acc + val;
+      }
+      return acc;
+    }, 0);
+    
+    calculatedResult.totalWeight = +totalWeight.toFixed(2);
     
     setResult(calculatedResult);
     setIsCalculated(true);
@@ -56,6 +81,7 @@ const SubstrateCalculator = () => {
     hardwood: 'Hardwood Pellets',
     soyhulls: 'Soy Hulls',
     straw: 'Wheat Straw',
+    totalWeight: 'Total Dry Weight'
   };
   
   const ingredientUnits: Record<string, string> = {
@@ -66,6 +92,13 @@ const SubstrateCalculator = () => {
     hardwood: 'kg',
     soyhulls: 'kg',
     straw: 'kg',
+    totalWeight: 'kg'
+  };
+
+  // Get primary ingredient label based on substrate type
+  const getPrimaryIngredientLabel = () => {
+    const primaryIngredient = getPrimaryIngredient(substrateType);
+    return ingredientLabels[primaryIngredient];
   };
 
   return (
@@ -75,7 +108,7 @@ const SubstrateCalculator = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-mushroom-800">Substrate Calculator</h2>
           <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
             Calculate the perfect substrate mix for your mushroom growing needs.
-            Simply select your substrate type and input your block specifications.
+            Simply select your substrate type and input your primary ingredient weight.
           </p>
         </div>
 
@@ -87,7 +120,7 @@ const SubstrateCalculator = () => {
                 <CardTitle className="text-2xl text-forest-800">Substrate Mix Calculator</CardTitle>
               </div>
               <CardDescription>
-                Select your substrate type and enter your block details
+                Select your substrate type and enter your primary ingredient details
               </CardDescription>
             </CardHeader>
             
@@ -120,12 +153,12 @@ const SubstrateCalculator = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div className="space-y-2">
-                  <Label htmlFor="blockSize">Block Size (kg)</Label>
+                  <Label htmlFor="primaryWeight">{getPrimaryIngredientLabel()} Weight (kg)</Label>
                   <Input
-                    id="blockSize"
+                    id="primaryWeight"
                     type="number"
-                    value={blockSize}
-                    onChange={(e) => setBlockSize(Number(e.target.value))}
+                    value={primaryWeight}
+                    onChange={(e) => setPrimaryWeight(Number(e.target.value))}
                     min="0.1"
                     step="0.1"
                     className="border-mushroom-200"
@@ -133,12 +166,12 @@ const SubstrateCalculator = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="numBlocks">Number of Blocks</Label>
+                  <Label htmlFor="numBatches">Number of Batches</Label>
                   <Input
-                    id="numBlocks"
+                    id="numBatches"
                     type="number"
-                    value={numBlocks}
-                    onChange={(e) => setNumBlocks(Number(e.target.value))}
+                    value={numBatches}
+                    onChange={(e) => setNumBatches(Number(e.target.value))}
                     min="1"
                     className="border-mushroom-200"
                   />
@@ -159,18 +192,23 @@ const SubstrateCalculator = () => {
                   <h3 className="text-lg font-semibold text-mushroom-800 mb-4">Required Ingredients:</h3>
                   <div className="bg-mushroom-50 p-4 rounded-lg border border-mushroom-200">
                     <ul className="space-y-3">
-                      {Object.entries(result).map(([ingredient, amount]) => (
-                        <li key={ingredient} className="flex justify-between">
-                          <span className="text-mushroom-700">{ingredientLabels[ingredient]}:</span>
-                          <span className="font-medium text-forest-700">
-                            {amount} {ingredientUnits[ingredient]}
-                          </span>
-                        </li>
-                      ))}
+                      {Object.entries(result).map(([ingredient, amount]) => {
+                        // Skip displaying the totalWeight in the ingredients list
+                        if (ingredient === 'totalWeight') return null;
+                        
+                        return (
+                          <li key={ingredient} className="flex justify-between">
+                            <span className="text-mushroom-700">{ingredientLabels[ingredient]}:</span>
+                            <span className="font-medium text-forest-700">
+                              {amount} {ingredientUnits[ingredient]}
+                            </span>
+                          </li>
+                        );
+                      })}
                       <li className="pt-2 border-t border-mushroom-200 flex justify-between">
                         <span className="text-mushroom-700">Total Substrate Weight:</span>
                         <span className="font-medium text-forest-800">
-                          {blockSize * numBlocks} kg
+                          {result.totalWeight} kg
                         </span>
                       </li>
                     </ul>
