@@ -9,28 +9,28 @@ import { Calculator } from "lucide-react";
 
 const SubstrateCalculator = () => {
   const [substrateType, setSubstrateType] = useState('cvg');
-  const [blockSize, setBlockSize] = useState(5); // in pounds
+  const [blockSize, setBlockSize] = useState(2.3); // in kg (approximately 5 lbs converted)
   const [numBlocks, setNumBlocks] = useState(1);
   const [result, setResult] = useState<Record<string, number>>({});
   const [isCalculated, setIsCalculated] = useState(false);
   
-  // Formula mappings for different substrate types (amounts per pound)
+  // Formula mappings for different substrate types (amounts per kg)
   const substrateFormulas = {
     cvg: { // Coir, Vermiculite, Gypsum
-      coir: 0.55, // pounds per pound of substrate
-      vermiculite: 0.35, // pounds per pound of substrate
-      gypsum: 0.05, // pounds per pound of substrate
-      water: 1.5, // quarts per pound of substrate
+      coir: 0.55, // kg per kg of substrate
+      vermiculite: 0.35, // kg per kg of substrate
+      gypsum: 0.05, // kg per kg of substrate
+      water: 1500, // grams per kg of substrate (converted from 1.5 quarts = ~1500g per kg)
     },
     masters: { // Masters Mix - Soy hulls and Hardwood
-      hardwood: 0.5, // pounds per pound of substrate
-      soyhulls: 0.5, // pounds per pound of substrate
-      water: 1.8, // quarts per pound of substrate
+      hardwood: 0.5, // kg per kg of substrate
+      soyhulls: 0.5, // kg per kg of substrate
+      water: 1800, // grams per kg of substrate
     },
     straw: { // Straw
-      straw: 0.8, // pounds per pound of substrate
-      gypsum: 0.05, // pounds per pound of substrate
-      water: 2.0, // quarts per pound of substrate
+      straw: 0.8, // kg per kg of substrate
+      gypsum: 0.05, // kg per kg of substrate
+      water: 2000, // grams per kg of substrate
     },
   };
 
@@ -59,13 +59,13 @@ const SubstrateCalculator = () => {
   };
   
   const ingredientUnits: Record<string, string> = {
-    coir: 'lbs',
-    vermiculite: 'lbs',
-    gypsum: 'lbs',
-    water: 'quarts',
-    hardwood: 'lbs',
-    soyhulls: 'lbs',
-    straw: 'lbs',
+    coir: 'kg',
+    vermiculite: 'kg',
+    gypsum: 'kg',
+    water: 'g',
+    hardwood: 'kg',
+    soyhulls: 'kg',
+    straw: 'kg',
   };
 
   return (
@@ -120,13 +120,14 @@ const SubstrateCalculator = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div className="space-y-2">
-                  <Label htmlFor="blockSize">Block Size (lbs)</Label>
+                  <Label htmlFor="blockSize">Block Size (kg)</Label>
                   <Input
                     id="blockSize"
                     type="number"
                     value={blockSize}
                     onChange={(e) => setBlockSize(Number(e.target.value))}
-                    min="1"
+                    min="0.1"
+                    step="0.1"
                     className="border-mushroom-200"
                   />
                 </div>
@@ -169,7 +170,7 @@ const SubstrateCalculator = () => {
                       <li className="pt-2 border-t border-mushroom-200 flex justify-between">
                         <span className="text-mushroom-700">Total Substrate Weight:</span>
                         <span className="font-medium text-forest-800">
-                          {blockSize * numBlocks} lbs
+                          {blockSize * numBlocks} kg
                         </span>
                       </li>
                     </ul>
